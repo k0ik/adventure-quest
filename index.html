@@ -3,21 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Forest Adventure: Visual Study</title>
+    <title>Woodland Visual Study</title>
     <link rel="stylesheet" href="/src/study/study.css" />
   </head>
   <body>
     <canvas id="scene" aria-label="Visual study: a woodland clearing with a tree, rock, lantern and Rabbit"></canvas>
-    <nav class="study-panel" aria-label="Study views">
-      <p class="study-title">Stage 1 · Visual study</p>
-      <div class="study-buttons">
-        <button type="button" data-view="overall">Overall</button>
-        <button type="button" data-view="character">Character</button>
-        <button type="button" data-view="portrait">Portrait</button>
-        <button type="button" data-view="free">Free look</button>
-      </div>
-      <p class="study-hint" id="hint">Drag to orbit · scroll to zoom</p>
-    </nav>
+    <nav class="study-panel" id="panel" aria-label="Study controls"></nav>
     <script type="module" src="/src/study/main.ts"></script>
   </body>
 </html>

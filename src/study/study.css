@@ -12,8 +12,13 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #e3b996; }
   padding: 12px 14px; border-radius: 12px; background: var(--panel-bg); color: var(--panel-fg);
   font: 15px/1.35 Georgia, 'Iowan Old Style', serif; backdrop-filter: blur(6px);
 }
-.study-title { margin: 0 0 8px; font-weight: bold; letter-spacing: 0.02em; }
-.study-buttons { display: flex; flex-wrap: wrap; gap: 6px; }
+.study-title { margin: 0; font-weight: bold; letter-spacing: 0.02em; }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 8px; }
+.row-title { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.75; min-width: 4.5em; }
+.row-items { display: flex; flex-wrap: wrap; gap: 6px; }
+.check { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 8px; border: 1px solid rgba(246, 236, 217, 0.3); cursor: pointer; }
+.check input { accent-color: var(--accent); margin: 0; }
+.check:focus-within { outline: 3px solid var(--focus); outline-offset: 2px; }
 .study-panel button {
   font: inherit; color: var(--panel-fg); background: transparent; cursor: pointer;
   border: 1px solid rgba(246, 236, 217, 0.45); border-radius: 8px; padding: 6px 12px;

@@ -7,7 +7,16 @@ import type { PaletteKey } from '../../art/palette';
  */
 export interface AnimalSpec {
   id: string;
-  fur: { main: PaletteKey; light: PaletteKey; inner: PaletteKey; nose: PaletteKey };
+  fur: {
+    main: PaletteKey;
+    light: PaletteKey;
+    inner: PaletteKey;
+    nose: PaletteKey;
+    /** Optional different colour for arms and legs (e.g. a badger's dark limbs). */
+    limbs?: PaletteKey;
+    /** Optional colour for paws and feet (defaults to `light`). */
+    paws?: PaletteKey;
+  };
   body: {
     hipHeight: number; // height of the hip joint above the ground
     hipWidth: number; // half-width of the haunches
@@ -35,10 +44,18 @@ export interface AnimalSpec {
       muzzleTint: number;
       /** Where the ears sit along the head (in radius units). */
       earAt: number;
+      /** Base colour of the head if it differs from the body fur. */
+      base?: PaletteKey;
+      /**
+       * Facial markings, first match wins. Coordinates in radius units: `absX` is distance from
+       * the midline, `at` is position along the head (back → nose), `up` is height within the
+       * local cross-section (−1 jaw … +1 crown).
+       */
+      paint?: { colour: PaletteKey; absX?: [number, number]; at?: [number, number]; up?: [number, number] }[];
     };
   };
   /** Sphere heads use spacing/height; lofted heads use `at` (along the head) and `angle` (up from the side). */
-  eyes: { spacing: number; height: number; size: number; at?: number; angle?: number };
+  eyes: { spacing: number; height: number; size: number; at?: number; angle?: number; colour?: PaletteKey; rim?: PaletteKey };
   ears: {
     kind: 'long' | 'round' | 'pointed';
     length: number;
@@ -46,6 +63,9 @@ export interface AnimalSpec {
     splay: number; // outward angle, radians
     tilt: number; // backward lean, radians
     droop?: { side: 'left' | 'right'; angle: number; at: number }; // folded tip
+    /** Ear colour if it differs from the head; how far apart (fraction of head width, default 0.42). */
+    colour?: PaletteKey;
+    spread?: number;
   };
   arms: { upper: number; lower: number; thickness: number; paw: number };
   legs: { thickness: number; haunch: number; foot: { length: number; width: number; height: number } };
@@ -59,13 +79,22 @@ export type GarmentSpec =
   | { kind: 'jumper'; colour: PaletteKey; trim: PaletteKey; length: number; sleeves: 'long' | 'short' }
   | { kind: 'apron'; colour: PaletteKey; trim?: PaletteKey; pocket?: boolean; length: number }
   | { kind: 'collar'; colour: PaletteKey }
-  | { kind: 'scarf'; colour: PaletteKey; trim?: PaletteKey };
+  | { kind: 'scarf'; colour: PaletteKey; trim?: PaletteKey }
+  /** Open-fronted waistcoat over the torso, with buttons down each front edge. */
+  | { kind: 'waistcoat'; colour: PaletteKey; buttons: PaletteKey; length: number }
+  /** Flat cap with a short brim, worn on the crown between the ears. */
+  | { kind: 'cap'; colour: PaletteKey; band?: PaletteKey; tilt?: number };
 
 export interface OutfitSpec {
   garments: GarmentSpec[];
 }
 
-export type AccessorySpec = { kind: 'teacup'; hand: 'left' | 'right'; colour: PaletteKey; band: PaletteKey };
+export type AccessorySpec =
+  | { kind: 'teacup'; hand: 'left' | 'right'; colour: PaletteKey; band: PaletteKey }
+  /** Walking staff standing on the ground, gripped by one hand. */
+  | { kind: 'staff'; hand: 'left' | 'right'; colour: PaletteKey; knob: PaletteKey; extra: number }
+  /** Satchel on one hip with a strap across the chest. */
+  | { kind: 'satchel'; side: 'left' | 'right'; colour: PaletteKey; strap: PaletteKey; buckle: PaletteKey };
 
 /** Named joints exposed for later animation (breathing, head turns, gestures, tail). */
 export type JointName =

@@ -24,6 +24,16 @@ export const studyScene = {
   rock: { id: 'study-rock', x: 2.6, z: 0.1, size: 1.15, squash: 0.62, mossy: 0.55 },
   lantern: { id: 'study-lantern', x: 1.35, z: -1.6, rotY: -0.5, height: 1.95 },
   resident: { id: 'rabbit', x: -0.55, z: 0.75, rotY: 0.3 },
+  /** Stage 2 character study: the two residents side by side in the sunlit part of the clearing. */
+  pair: {
+    residents: [
+      { id: 'rabbit', x: -0.4, z: 0.95 },
+      { id: 'badger', x: 0.42, z: 0.95 },
+    ],
+    camera: { position: [0.0, 0.8, 3.0], target: [0.0, 0.52, 0.95] },
+    /** Turntable views: the characters turn in place so lighting stays comparable for both. */
+    turns: { front: 0, threeQuarter: 0.75, side: Math.PI / 2 },
+  },
   mushrooms: [
     { id: 'study-mush-roots', kind: 'pale' as const, x: -1.75, z: -1.25, count: 5, spread: 0.22 },
     { id: 'study-mush-rock', kind: 'toadstool' as const, x: 2.0, z: 0.95, count: 3, spread: 0.2 },

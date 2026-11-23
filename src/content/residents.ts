@@ -12,4 +12,5 @@ export interface Resident {
 
 export const residents: Record<string, Resident> = {
   rabbit: { id: 'rabbit', name: 'Clover Thimblewick', species: 'rabbit', visual: 'rabbit-clover', occupation: 'tea-room keeper' },
+  badger: { id: 'badger', name: 'Bertram Holloway', species: 'badger', visual: 'badger-bertram', occupation: 'trail-lodge keeper' },
 };

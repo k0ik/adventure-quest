@@ -13,15 +13,25 @@ import { buildWoodland } from '../builders/woodland';
 import { sunDirection } from './environment';
 import { mat } from '../art/materials';
 import type { AnimalRig } from '../builders/animal/types';
+import type { MotionConfig } from '../anim/animator';
+
+export interface StudyResident {
+  id: string;
+  rig: AnimalRig;
+  motion: MotionConfig;
+  baseYaw: number;
+}
 
 export interface Study {
   root: THREE.Group;
   lantern: LanternPost;
-  rabbit: AnimalRig;
+  residents: StudyResident[];
 }
 
+export type StudyMode = 'woodland' | 'characters';
+
 /** Translate the authored study definition into scene objects. Deterministic for a given definition. */
-export function buildStudy(): Study {
+export function buildStudy(mode: StudyMode = 'woodland'): Study {
   const root = new THREE.Group();
   root.name = `scene:${S.id}`;
 
@@ -30,6 +40,8 @@ export function buildStudy(): Study {
     { x: S.rock.x, z: S.rock.z, r: 0.7 },
     { x: S.lantern.x, z: S.lantern.z, r: 0.2 },
     { x: S.resident.x, z: S.resident.z, r: 0.35 },
+    // Keep grass from poking through the pair's feet in the character study only.
+    ...(mode === 'characters' ? S.pair.residents.map((r) => ({ x: r.x, z: r.z, r: 0.3 })) : []),
   ] });
   root.add(ground.object);
   const seat = (o: THREE.Object3D, x: number, z: number, rotY = 0) => {
@@ -45,11 +57,17 @@ export function buildStudy(): Study {
   seat(lantern.object, S.lantern.x, S.lantern.z, S.lantern.rotY);
   for (const m of S.mushrooms) seat(buildMushrooms(m), m.x, m.z);
 
-  const who = residents[S.resident.id];
-  const look = visuals[who.visual];
-  const rabbit = buildAnimal(look.body, look.outfit, look.accessories, look.restPose);
-  rabbit.object.userData.residentId = who.id;
-  seat(rabbit.object, S.resident.x, S.resident.z, S.resident.rotY);
+  const placements = mode === 'woodland'
+    ? [{ id: S.resident.id, x: S.resident.x, z: S.resident.z, rotY: S.resident.rotY }]
+    : S.pair.residents.map((r) => ({ ...r, rotY: 0 }));
+  const placed: StudyResident[] = placements.map((pl) => {
+    const who = residents[pl.id];
+    const look = visuals[who.visual];
+    const rig = buildAnimal(look.body, look.outfit, look.accessories, look.restPose);
+    rig.object.userData.residentId = who.id;
+    seat(rig.object, pl.x, pl.z, pl.rotY);
+    return { id: who.id, rig, motion: look.motion, baseYaw: pl.rotY };
+  });
 
   // Outer meadow so the study patch sits in a landscape rather than floating in sky.
   const meadow = new THREE.Mesh(new THREE.CircleGeometry(60, 48), mat('forestFloor'));
@@ -79,5 +97,5 @@ export function buildStudy(): Study {
     { radius: 34, height: 9, colour: 'hillNear', haze: 0.4 },
   ]));
 
-  return { root, lantern, rabbit };
+  return { root, lantern, residents: placed };
 }

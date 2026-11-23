@@ -1,4 +1,5 @@
 import type { AccessorySpec, AnimalSpec, OutfitSpec, Pose } from '../builders/animal/types';
+import type { MotionConfig } from '../anim/animator';
 
 /**
  * Authored visual definitions for residents. Presentation only: identity and quest role are
@@ -9,6 +10,7 @@ export interface ResidentVisual {
   outfit: OutfitSpec;
   accessories: AccessorySpec[];
   restPose: Pose;
+  motion: MotionConfig;
 }
 
 export const visuals: Record<string, ResidentVisual> = {
@@ -60,6 +62,80 @@ export const visuals: Record<string, ResidentVisual> = {
       shoulderL: [0.05, 0, 0.05],
       elbowL: [-0.25, 0, 0],
       head: [0.06, 0.18, 0.07],
+    },
+    // Quick, light and attentive.
+    motion: {
+      breath: { perMinute: 24, amount: 1 },
+      look: { maxYaw: 0.85, maxPitch: 0.45, speed: 3.2, idle: 0.35 },
+      gesture: { kind: 'wave', arm: 'L', duration: 2.6 },
+      ears: { twitchesPerMinute: 9, amount: 0.28 },
+      tail: { wagsPerSecond: 2.2, amount: 0.25 },
+    },
+  },
+  'badger-bertram': {
+    body: {
+      id: 'badger-bertram',
+      fur: { main: 'furBadger', light: 'furBadgerWhite', inner: 'furBadgerWhite', nose: 'furBadgerDark', limbs: 'furBadgerDark', paws: 'furBadgerDark' },
+      // Low, broad and stocky: wide hips and chest, short sturdy legs, a forward hunch.
+      body: { hipHeight: 0.19, hipWidth: 0.27, torsoLength: 0.42, chestWidth: 0.23, depth: 0.21, belly: 0.75 },
+      head: {
+        radius: 0.19,
+        scale: [1, 1, 1],
+        cheeks: 0,
+        muzzle: { length: 0, width: 0, height: 0, drop: 0 },
+        noseSize: 0.026,
+        profile: {
+          // Flat-topped wedge with a long tapering snout.
+          rings: [
+            { at: -0.8, w: 0.55, h: 0.5, c: 0.05 },
+            { at: -0.45, w: 0.86, h: 0.7, c: 0.05 },
+            { at: 0.0, w: 0.93, h: 0.66, c: 0.0 },
+            { at: 0.4, w: 0.74, h: 0.52, c: -0.08 },
+            { at: 0.8, w: 0.44, h: 0.35, c: -0.16 },
+            { at: 1.15, w: 0.24, h: 0.21, c: -0.2 },
+            { at: 1.3, w: 0.15, h: 0.14, c: -0.18 },
+          ],
+          muzzleTint: 0,
+          earAt: -0.5,
+          base: 'furBadgerWhite',
+          // White head, dark bands from snout through the eyes to the ears, grey at the nape.
+          paint: [
+            { colour: 'furBadger', at: [-2, -0.62] },
+            // Two dark bands either side of a broad white crown stripe, running nose → eye → ear.
+            { colour: 'furBadgerDark', absX: [0.28, 0.66], up: [-0.15, 2], at: [-0.62, 1.12] },
+          ],
+        },
+      },
+      eyes: { spacing: 0, height: 0, size: 0.024, at: 0.32, angle: 0.55, rim: 'eyeRimDark' },
+      ears: { kind: 'round', length: 0.042, width: 0.04, splay: 0.6, tilt: 0.3, colour: 'furBadgerDark', spread: 0.74 },
+      arms: { upper: 0.13, lower: 0.12, thickness: 0.055, paw: 0.052 },
+      legs: { thickness: 0.062, haunch: 0.13, foot: { length: 0.17, width: 0.075, height: 0.055 } },
+      tail: { kind: 'stub', size: 0.06 },
+      stance: { lean: 0.09 },
+    },
+    outfit: {
+      garments: [
+        { kind: 'jumper', colour: 'clothCream', trim: 'clothCream', length: 0.55, sleeves: 'long' },
+        { kind: 'waistcoat', colour: 'clothMoss', buttons: 'brass', length: 0.55 },
+        { kind: 'cap', colour: 'clothTweed', band: 'leatherDark', tilt: 0.08 },
+      ],
+    },
+    accessories: [
+      { kind: 'satchel', side: 'right', colour: 'leather', strap: 'leatherDark', buckle: 'brass' },
+      { kind: 'staff', hand: 'left', colour: 'timber', knob: 'timberDark', extra: 0.3 },
+    ],
+    restPose: {
+      shoulderL: [-0.45, 0, 0.12],
+      elbowL: [-0.85, 0, 0],
+      head: [0.14, -0.12, 0],
+    },
+    // Slow, steady and deliberate.
+    motion: {
+      breath: { perMinute: 14, amount: 1.4 },
+      look: { maxYaw: 0.65, maxPitch: 0.35, speed: 1.8, idle: 0.22 },
+      gesture: { kind: 'point', arm: 'R', duration: 2.4 },
+      ears: { twitchesPerMinute: 3, amount: 0.18 },
+      tail: { wagsPerSecond: 1.2, amount: 0.15 },
     },
   },
 };

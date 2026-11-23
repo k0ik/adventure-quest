@@ -40,6 +40,10 @@ export const palette = {
   furRabbit: '#b99a78',
   furRabbitLight: '#ead9bf',
   furRabbitInner: '#e3a69c',
+  furBadger: '#8b867e',
+  furBadgerDark: '#2b292a',
+  furBadgerWhite: '#ebe5d8',
+  eyeRimDark: '#4b4644',
   eye: '#231b16',
   nose: '#c9767a',
 
@@ -51,6 +55,10 @@ export const palette = {
   clothCream: '#efe3c8',
   clothNavy: '#34445e',
   clothPlum: '#6e4157',
+  clothMoss: '#5d6f38',
+  clothTweed: '#7d6c50',
+  leather: '#82502c',
+  leatherDark: '#5a3820',
 
   // Mushrooms and flowers
   capRed: '#b8402f',

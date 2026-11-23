@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { mat, mesh, enableShadows, vertexColourMat, smoothGloss } from '../../art/materials';
+import { palette } from '../../art/palette';
 import { ball, capsule, lowSphere, cylinder, paintFaces } from '../../art/geometry';
 import { headSection, earSection, loftY, loftZ, ringAt, sliceRings, type Ring } from './loft';
 import type { AccessorySpec, AnimalRig, AnimalSpec, JointName, OutfitSpec, Pose } from './types';
@@ -15,6 +16,8 @@ export function buildAnimal(spec: AnimalSpec, outfit: OutfitSpec, accessories: A
   const fur = mat(spec.fur.main);
   const furLight = mat(spec.fur.light);
   const furInner = mat(spec.fur.inner);
+  const limbFur = spec.fur.limbs ? mat(spec.fur.limbs) : fur;
+  const pawFur = spec.fur.paws ? mat(spec.fur.paws) : furLight;
   const b = spec.body;
   const j = {} as Record<JointName, THREE.Object3D>;
   const joint = (name: JointName, parent: THREE.Object3D | null, x = 0, y = 0, z = 0) => {
@@ -62,15 +65,15 @@ export function buildAnimal(spec: AnimalSpec, outfit: OutfitSpec, accessories: A
     const sx = side === 'L' ? 1 : -1;
     const shoulder = joint(`shoulder${side}`, chest, sx * b.chestWidth * 0.92, b.torsoLength * 0.12, 0);
     const a = spec.arms;
-    const upper = mesh(capsule(a.thickness, a.upper, 3, 7), fur, 'upper-arm');
+    const upper = mesh(capsule(a.thickness, a.upper, 3, 7), limbFur, 'upper-arm');
     upper.position.y = -a.upper / 2;
     shoulder.add(upper);
     const elbow = joint(`elbow${side}`, shoulder, 0, -a.upper, 0);
-    const lower = mesh(capsule(a.thickness * 0.92, a.lower, 3, 7), fur, 'forearm');
+    const lower = mesh(capsule(a.thickness * 0.92, a.lower, 3, 7), limbFur, 'forearm');
     lower.position.y = -a.lower / 2;
     elbow.add(lower);
     const hand = joint(`hand${side}`, elbow, 0, -a.lower - a.thickness * 0.4, 0);
-    const paw = mesh(ball(1), furLight, 'paw');
+    const paw = mesh(ball(1), pawFur, 'paw');
     paw.scale.set(a.paw, a.paw * 1.1, a.paw * 0.9);
     hand.add(paw);
     shoulder.rotation.z = sx * 0.12;
@@ -81,16 +84,16 @@ export function buildAnimal(spec: AnimalSpec, outfit: OutfitSpec, accessories: A
     const sx = side === 'L' ? 1 : -1;
     const l = spec.legs;
     const leg = joint(`leg${side}`, hips, sx * b.hipWidth * 0.55, 0, 0);
-    const haunch = mesh(lowSphere(8, 6), fur, 'haunch');
+    const haunch = mesh(lowSphere(8, 6), limbFur, 'haunch');
     haunch.scale.set(l.haunch * 0.85, l.haunch, l.haunch * 1.05);
     haunch.position.set(sx * 0.01, -l.haunch * 0.15, 0);
     leg.add(haunch);
     const shinLen = Math.max(0.01, b.hipHeight - l.foot.height - l.thickness);
-    const shin = mesh(capsule(l.thickness, shinLen, 3, 7), fur, 'shin');
+    const shin = mesh(capsule(l.thickness, shinLen, 3, 7), limbFur, 'shin');
     shin.position.y = -b.hipHeight / 2;
     leg.add(shin);
     const foot = joint(`foot${side}`, leg, 0, -b.hipHeight + l.foot.height / 2, 0);
-    const footMesh = mesh(ball(1), furLight, 'foot');
+    const footMesh = mesh(ball(1), pawFur, 'foot');
     footMesh.scale.set(l.foot.width, l.foot.height / 2 + 0.01, l.foot.length / 2);
     footMesh.position.set(0, 0, l.foot.length * 0.28);
     foot.add(footMesh);
@@ -116,12 +119,14 @@ export function buildAnimal(spec: AnimalSpec, outfit: OutfitSpec, accessories: A
 
   dressTorso(spec, outfit, j);
   for (const side of ['L', 'R'] as const) dressArm(spec, outfit, j, side);
-  for (const acc of accessories) buildAccessory(acc, j);
 
   for (const [name, r] of Object.entries(pose)) {
     const o = j[name as JointName];
     if (o) o.rotation.set(o.rotation.x + r[0], o.rotation.y + r[1], o.rotation.z + r[2]);
   }
+  // Accessories after posing: some (a staff) are placed from where the posed hand ends up.
+  root.updateMatrixWorld(true);
+  for (const acc of accessories) buildAccessory(acc, j, spec);
 
   enableShadows(root);
   return { object: root, joints: j };
@@ -201,12 +206,14 @@ function buildEars(
   const h = spec.head;
   const R = h.radius;
   const ears = spec.ears;
+  if (ears.colour) fur = mat(ears.colour);
   for (const side of ['L', 'R'] as const) {
     const sx = side === 'L' ? 1 : -1;
     let base: THREE.Vector3;
     if (h.profile) {
       const r = ringAt(h.profile.rings, h.profile.earAt);
-      base = new THREE.Vector3(sx * r.w * R * 0.42, (r.c + r.h * 0.8) * R, h.profile.earAt * R);
+      const spread = ears.spread ?? 0.42;
+      base = new THREE.Vector3(sx * r.w * R * spread, (r.c + r.h * Math.sqrt(Math.max(0.05, 1 - spread * spread)) * 0.92) * R, h.profile.earAt * R);
     } else {
       base = new THREE.Vector3(sx * R * h.scale[0] * 0.42, R * h.scale[1] * 0.82, -R * 0.12);
     }
@@ -287,13 +294,19 @@ function buildLoftHead(spec: AnimalSpec, head: THREE.Object3D, fur: THREE.Materi
   const rings: Ring[] = P.rings.map((r) => ({ at: r.at * R, w: r.w * R, h: r.h * R, c: r.c * R }));
   const geo = loftZ(rings, headSection);
   // Two-tone by facet: subtle lighter muzzle and chin, the rest main fur.
-  const main = new THREE.Color().copy((fur as THREE.MeshStandardMaterial).color);
+  const main = P.base ? new THREE.Color(palette[P.base]) : new THREE.Color().copy((fur as THREE.MeshStandardMaterial).color);
   const light = new THREE.Color().copy((furLight as THREE.MeshStandardMaterial).color);
+  const marks = (P.paint ?? []).map((m) => ({ ...m, c: new THREE.Color(palette[m.colour]) }));
+  const within = (v: number, r?: [number, number]) => !r || (v >= r[0] && v <= r[1]);
   const muzzle = main.clone().lerp(light, P.muzzleTint);
   const chin = main.clone().lerp(light, P.muzzleTint * 0.8);
   const front = rings[rings.length - 1].at;
   paintFaces(geo, (c, n) => {
     const r = ringAt(rings, c.z);
+    const up = (c.y - r.c) / Math.max(1e-6, r.h);
+    for (const m of marks) {
+      if (within(Math.abs(c.x) / R, m.absX) && within(c.z / R, m.at) && within(up, m.up)) return m.c;
+    }
     if (c.z > front * 0.55 && c.y < r.c) return muzzle;
     if (n.y < -0.55) return chin;
     return main;
@@ -324,12 +337,20 @@ function buildLoftHead(spec: AnimalSpec, head: THREE.Object3D, fur: THREE.Materi
     const hit = ray.intersectObject(probe, false)[0];
     if (!hit || !hit.face) continue;
     const normal = hit.face.normal.clone().normalize();
-    const eye = mesh(lowSphere(14, 10), smoothGloss('eye'), 'eye');
+    const eye = mesh(lowSphere(14, 10), smoothGloss(e.colour ?? 'eye'), 'eye');
     eye.scale.set(e.size, e.size * 1.15, e.size * 0.42);
     // Centre just outside the facet: a shallow dome that never intersects the face.
     eye.position.copy(hit.point).addScaledVector(normal, e.size * 0.12);
     eye.lookAt(eye.position.clone().add(normal));
     head.add(eye);
+    if (e.rim) {
+      // A thin lighter ring so a dark eye still reads against dark fur.
+      const rim = mesh(new THREE.CircleGeometry(1, 12), mat(e.rim), 'eye-rim');
+      rim.scale.set(e.size * 1.28, e.size * 1.45, 1);
+      rim.position.copy(hit.point).addScaledVector(normal, 0.002);
+      rim.lookAt(rim.position.clone().add(normal));
+      head.add(rim);
+    }
   }
   probe.material.dispose();
 }
