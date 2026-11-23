@@ -8,7 +8,9 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "shots": "node scripts/screenshots.mjs"
+    "shots": "node scripts/screenshots.mjs",
+    "check:gestures": "esbuild scripts/check-gestures.ts --bundle --platform=node --format=esm --log-level=error --outfile=node_modules/.cache/check-gestures.mjs && node node_modules/.cache/check-gestures.mjs",
+    "playtest": "node scripts/playtest.mjs"
   },
   "dependencies": {
     "three": "0.187.0"

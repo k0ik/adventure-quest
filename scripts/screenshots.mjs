@@ -14,6 +14,7 @@ try {
 import { mkdirSync } from 'node:fs';
 
 const base = process.argv[2] ?? 'http://localhost:5173/';
+// Base may be a page path, e.g. http://localhost:5173/study.html
 const out = process.argv[3] ?? 'docs/stage1';
 const scale = Number(process.argv[4] ?? 2);
 // SHOTS="file|query;file|query" captures arbitrary study URLs; WAIT adds a delay (ms) before each shot.
@@ -29,7 +30,8 @@ const errors = [];
 page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
 page.on('pageerror', (e) => errors.push(String(e)));
 for (const { file, query } of shots) {
-  await page.goto(`${base}?${query}&ui=0`);
+  // Hide the review panel unless the shot is about the UI (HUD=1).
+  await page.goto(`${base}?${query}${process.env.HUD === '1' ? '' : '&ui=0'}`);
   await page.waitForFunction(() => window.__studyReady === true, null, { timeout: 120000 });
   await page.waitForTimeout(wait);
   await page.screenshot({ path: `${out}/${file}.png` });

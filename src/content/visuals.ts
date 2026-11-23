@@ -67,7 +67,8 @@ export const visuals: Record<string, ResidentVisual> = {
     motion: {
       breath: { perMinute: 26, amount: 1 },
       look: { maxYaw: 0.85, maxPitch: 0.45, speed: 6, idle: 0.4, pace: 2.2 },
-      gesture: { kind: 'wave', arm: 'L', duration: 2.6 },
+      // Wave shape checked against her large head: the paw stays clear throughout.
+      gesture: { kind: 'wave', arm: 'L', duration: 2.6, lift: 1.4, bend: 0.7, reach: -0.9 },
       ears: { twitchesPerMinute: 22, amount: 0.34 },
       tail: { wagsPerSecond: 2.2, amount: 0.25 },
     },

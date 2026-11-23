@@ -39,7 +39,7 @@ export function buildEnvironment(scene: THREE.Scene): { sun: THREE.DirectionalLi
 }
 
 function buildSky(): THREE.Mesh {
-  const geo = new THREE.SphereGeometry(80, 32, 16);
+  const geo = new THREE.SphereGeometry(150, 32, 16);
   const material = new THREE.ShaderMaterial({
     side: THREE.BackSide,
     depthWrite: false,
@@ -73,4 +73,14 @@ function buildSky(): THREE.Mesh {
   const sky = new THREE.Mesh(geo, material);
   sky.name = 'sky';
   return sky;
+}
+
+/**
+ * Keep the sun's shadow box centred on what the player is looking at, so shadows work in
+ * every location of a large world. Snapped to whole metres to avoid shimmering.
+ */
+export function followShadow(sun: THREE.DirectionalLight, centre: THREE.Vector3): void {
+  const x = Math.round(centre.x), z = Math.round(centre.z);
+  sun.target.position.set(x, 0, z);
+  sun.position.set(x, 0, z).addScaledVector(sunDirection, 30);
 }

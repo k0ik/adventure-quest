@@ -2,13 +2,14 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Woodland Visual Study</title>
-    <link rel="stylesheet" href="/src/study/study.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Forest Adventure</title>
+    <link rel="stylesheet" href="/src/game/game.css" />
   </head>
   <body>
-    <canvas id="scene" aria-label="Visual study: a woodland clearing with a tree, rock, lantern and Rabbit"></canvas>
-    <nav class="study-panel" id="panel" aria-label="Study controls"></nav>
-    <script type="module" src="/src/study/main.ts"></script>
+    <canvas id="scene" aria-hidden="true"></canvas>
+    <div id="fade" class="fade" aria-hidden="true"></div>
+    <div id="hud" class="hud"></div>
+    <script type="module" src="/src/game/main.ts"></script>
   </body>
 </html>

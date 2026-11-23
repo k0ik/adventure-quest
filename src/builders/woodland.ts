@@ -24,6 +24,11 @@ export interface WoodlandParams {
    * shaft of low sunlight reaches the clearing. Bushes may still grow there.
    */
   sunGap?: { dir: [number, number]; halfAngle: number };
+  /**
+   * Further clearings inside the woodland (e.g. other locations on the same terrain). Trees and
+   * bushes keep out; with `sunGap`, tall trees also keep out of that clearing's sun wedge.
+   */
+  extraClearings?: { x: number; z: number; r: number }[];
   /** Spots that must stay open (study objects, camera positions). */
   keepOpen: { x: number; z: number; r: number }[];
 }
@@ -35,6 +40,7 @@ export function buildWoodland(p: WoodlandParams): THREE.Group {
   const placed: { x: number; z: number; r: number }[] = [];
   const open = (x: number, z: number, r: number, trailMargin: number, minGap: number) => {
     if (Math.hypot(x - p.clearing.x, z - p.clearing.z) < p.clearing.r + r) return false;
+    if (p.extraClearings?.some((c) => Math.hypot(x - c.x, z - c.z) < c.r + r)) return false;
     if (p.trailDistance(x, z) < trailMargin + r) return false;
     if (p.keepOpen.some((k) => Math.hypot(x - k.x, z - k.z) < k.r + r)) return false;
     return placed.every((q) => Math.hypot(x - q.x, z - q.z) > Math.max(minGap, (q.r + r) * 0.8));
@@ -56,9 +62,15 @@ export function buildWoodland(p: WoodlandParams): THREE.Group {
     const fir = rng() < p.trees.firShare;
     const r = fir ? 0.9 : 1.1;
     if (p.sunGap) {
-      const a = Math.atan2(x - p.clearing.x, z - p.clearing.z) - Math.atan2(p.sunGap.dir[0], p.sunGap.dir[1]);
-      const d = Math.abs(Math.atan2(Math.sin(a), Math.cos(a)));
-      if (d < p.sunGap.halfAngle) continue;
+      const gap = p.sunGap;
+      const inGap = (c: { x: number; z: number }, reach: number) => {
+        if (Math.hypot(x - c.x, z - c.z) > reach) return false;
+        const a = Math.atan2(x - c.x, z - c.z) - Math.atan2(gap.dir[0], gap.dir[1]);
+        return Math.abs(Math.atan2(Math.sin(a), Math.cos(a))) < gap.halfAngle;
+      };
+      if (inGap(p.clearing, Infinity)) continue;
+      // Other clearings get only a short wedge, enough for light without opening the forest.
+      if (p.extraClearings?.some((c) => inGap(c, c.r + 3))) continue;
     }
     if (!open(x, z, r, p.trees.trailMargin, p.trees.minGap)) continue;
     const id = `${p.id}-tree-${made}`;

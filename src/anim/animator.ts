@@ -9,7 +9,11 @@ export interface MotionConfig {
   breath: { perMinute: number; amount: number };
   /** `pace` speeds up idle glances (1 = calm). */
   look: { maxYaw: number; maxPitch: number; speed: number; idle: number; pace?: number };
-  gesture: { kind: 'wave' | 'point'; arm: 'L' | 'R'; duration: number };
+  /**
+   * Wave shape (radians): `lift` raises the upper arm out to the side, `bend` raises the forearm
+   * from the elbow, `reach` brings the arm forward. Tune per species so the paw clears the head.
+   */
+  gesture: { kind: 'wave' | 'point'; arm: 'L' | 'R'; duration: number; lift?: number; bend?: number; reach?: number };
   ears?: { twitchesPerMinute: number; amount: number };
   tail?: { wagsPerSecond: number; amount: number };
 }
@@ -125,11 +129,14 @@ export class Animator {
         const side = c.gesture.arm;
         const sx = side === 'L' ? 1 : -1;
         if (c.gesture.kind === 'wave') {
-          const w = Math.sin(g * 8.5);
-          add(`shoulder${side}`, -0.3 * env, 0, sx * 2.35 * env);
-          add(`elbow${side}`, 0, 0, sx * (0.55 + 0.35 * w * smooth(0.4, 0.7, g)) * env);
-          add(`hand${side}`, 0, 0, sx * 0.25 * w * env);
-          add('head', 0, 0, sx * -0.08 * env);
+          // Upper arm lifts out to the side (just above horizontal) and slightly forward; the
+          // forearm rises from the elbow and rocks. The paw stays outside even a large head.
+          const w = Math.sin(g * 8.5) * smooth(0.4, 0.7, g);
+          const g2 = c.gesture;
+          add(`shoulder${side}`, (g2.reach ?? -0.3) * env, 0, sx * (g2.lift ?? 1.75) * env);
+          add(`elbow${side}`, 0, 0, sx * ((g2.bend ?? 0.9) + 0.3 * w) * env);
+          add(`hand${side}`, 0, 0, sx * 0.2 * w * env);
+          add('head', 0, 0, sx * -0.08 * env); // lean the head away from the raised arm
         } else {
           // Point along the way: arm raised forward and out, a small emphasis beat.
           const beat = Math.sin(Math.max(0, g - 0.5) * 6) * smooth(0.5, 0.8, g) * (1 - smooth(1.4, 1.8, g));

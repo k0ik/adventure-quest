@@ -21,6 +21,12 @@ export interface GroundParams {
   clear?: { x: number; z: number; r: number }[];
   /** Beyond this distance from the centre the ground becomes darker forest floor. */
   clearingRadius?: number;
+  /** Several clearings (overrides clearingRadius): ground darkens away from all of them. */
+  clearings?: { x: number; z: number; r: number }[];
+  /** A worn trail given as a distance function (overrides `path` for colouring and sinking). */
+  trail?: { width: number; distance: (x: number, z: number) => number };
+  /** Grid cells across the diameter (default 36). */
+  resolution?: number;
 }
 
 export interface GroundPatch {
@@ -31,6 +37,9 @@ export interface GroundPatch {
 export function buildGround(p: GroundParams): GroundPatch {
   const rng = createRng(seedFrom(p.id));
   const phases = Array.from({ length: 6 }, () => rng() * Math.PI * 2);
+  const pathWidth = p.trail?.width ?? p.path?.width ?? 0;
+  const pathDist = (x: number, z: number) =>
+    p.trail ? p.trail.distance(x, z) : p.path ? Math.abs(x - p.path.curve(z)) : Infinity;
   const heightAt = (x: number, z: number) => {
     const h =
       Math.sin(x * 0.45 + phases[0]) * Math.cos(z * 0.38 + phases[1]) * 0.6 +
@@ -38,17 +47,16 @@ export function buildGround(p: GroundParams): GroundPatch {
       Math.cos(z * 1.3 + phases[3]) * Math.sin(x * 1.1 + phases[4]) * 0.15;
     // Path is slightly sunken and smoothed.
     let sink = 0;
-    if (p.path) {
-      const d = Math.abs(x - p.path.curve(z));
-      sink = Math.max(0, 1 - d / (p.path.width * 0.8)) * 0.05;
+    if (p.trail || p.path) {
+      const d = pathDist(x, z);
+      sink = Math.max(0, 1 - d / (pathWidth * 0.8)) * 0.05;
     }
     return h * p.relief - sink;
   };
-  const pathDist = (x: number, z: number) => (p.path ? Math.abs(x - p.path.curve(z)) : Infinity);
 
   // Square grid with slightly jittered vertices; points outside the radius are pulled onto the
   // rim so the edge is a clean circle without the starburst a polar grid makes at the centre.
-  const n = 36;
+  const n = p.resolution ?? 36;
   const cell = (p.radius * 2) / n;
   const gridPt = (ix: number, iz: number): [number, number, number] => {
     let x = -p.radius + ix * cell, z = -p.radius + iz * cell;
@@ -92,7 +100,7 @@ export function buildGround(p: GroundParams): GroundPatch {
   const tmp = new THREE.Color();
   paintFaces(geo, (c) => {
     const d = pathDist(c.x, c.z);
-    const w = p.path?.width ?? 0;
+    const w = pathWidth;
     const edge = d / (w * 0.5) + (rng() - 0.5) * 0.35;
     if (edge < 0.75) return tmp.copy(path).lerp(soil, rng() * 0.25).clone();
     if (edge < 1.05) return tmp.copy(path).lerp(grassDry, 0.55).clone();
@@ -101,9 +109,12 @@ export function buildGround(p: GroundParams): GroundPatch {
     if (t > 0.75) col = tmp.copy(grass).lerp(grassDry, 0.6).clone();
     else if (t < -0.7) col = moss.clone();
     else col = tmp.copy(grass).lerp(moss, (t + 1) * 0.15).clone();
-    if (p.clearingRadius) {
+    const floorEdge = p.clearings
+      ? Math.min(...p.clearings.map((q) => Math.hypot(c.x - q.x, c.z - q.z) - q.r))
+      : p.clearingRadius ? Math.hypot(c.x, c.z) - p.clearingRadius : null;
+    if (floorEdge !== null) {
       // Under the trees: shaded mossy floor with leaf litter.
-      const k = Math.min(1, Math.max(0, (Math.hypot(c.x, c.z) - p.clearingRadius) / 3));
+      const k = Math.min(1, Math.max(0, floorEdge / 3));
       col.lerp(rng() < 0.2 ? soil : floor, k * 0.75);
     }
     return col;
@@ -134,7 +145,7 @@ export function buildGround(p: GroundParams): GroundPatch {
   group.add(mesh(skirtGeo, mat('soil', 'matte', true), 'ground-edge'));
 
   const isClear = (x: number, z: number, margin = 0) =>
-    (p.clear ?? []).every((c) => Math.hypot(x - c.x, z - c.z) > c.r + margin) && pathDist(x, z) > (p.path?.width ?? 0) * 0.55;
+    (p.clear ?? []).every((c) => Math.hypot(x - c.x, z - c.z) > c.r + margin) && pathDist(x, z) > pathWidth * 0.55;
 
   const scatter = (count: number, inner = 0.92) => {
     const out: { x: number; z: number }[] = [];
@@ -156,7 +167,7 @@ export function buildGround(p: GroundParams): GroundPatch {
     for (let i = 0; i < k; i++) {
       const a = rng() * Math.PI * 2, r = c.r + range(rng, 0.0, 0.25);
       const x = c.x + Math.sin(a) * r, z = c.z + Math.cos(a) * r;
-      if (pathDist(x, z) > (p.path?.width ?? 0) * 0.55) tuftPts.push({ x, z });
+      if (pathDist(x, z) > pathWidth * 0.55) tuftPts.push({ x, z });
     }
   }
   const blade = grassBlade();
