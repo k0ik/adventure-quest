@@ -9,6 +9,7 @@ import { seedFrom } from '../art/rng';
 import { FirstPersonView, EYE_HEIGHT, lookAngles, isTyping } from '../nav/firstPerson';
 import { Travel } from '../nav/travel';
 import { Hud, loadSettings, showTitle } from './ui';
+import { Ambience } from '../audio/ambience';
 
 /**
  * Stage 3 interaction sample: read, choose, look around, travel, arrive.
@@ -159,6 +160,25 @@ function go(to: LocationId): void {
   }
 }
 
+// Ambient sound starts on the first click or key press (browsers require a user gesture).
+let ambience: Ambience | null = null;
+const fires = [{ position: new THREE.Vector3(world.props.campfire.x, 0, world.props.campfire.z), strength: world.props.campfire.strength }];
+function startSound(): void {
+  if (!settings.sound) return;
+  try {
+    ambience ??= new Ambience(settings.volume);
+    ambience.resume();
+    ambience.setVolume(settings.volume, false);
+  } catch {
+    ambience = null; // no Web Audio: play continues silently
+  }
+}
+for (const ev of ['pointerdown', 'keydown'] as const) window.addEventListener(ev, startSound);
+hud.onSoundChange = () => {
+  if (settings.sound) startSound();
+  ambience?.setVolume(settings.volume, !settings.sound);
+};
+
 hud.onRecentre = () => { if (!travel) view.recentre(); };
 hud.onSkip = () => travel?.finish();
 window.addEventListener('keydown', (e) => {
@@ -208,6 +228,8 @@ const ray = new THREE.Raycaster();
     if (travel && !travel.finished) { camera.position.copy(travel.position); view.yaw = travel.yaw; view.pitch = travel.pitch; }
     return out;
   },
+  audio: () => ambience?.levels() ?? null,
+  startSound,
   render: () => (renderer.info.render.calls + ' calls, ' + renderer.info.render.triangles + ' triangles'),
 };
 /** Nearest scenery in 16 horizontal directions at eye and chest height (excludes ground). */
@@ -255,6 +277,7 @@ renderer.setAnimationLoop(() => {
     a.animator.update(t, dt, { ...toggles, look: !talking, lookAtViewer: talking }, camera.position);
   }
   built.campfire.update(t);
+  ambience?.update(camera.position, view.yaw, fires);
   for (const l of built.lanterns) {
     const f = 1 + 0.06 * Math.sin(t * 9.1) + 0.04 * Math.sin(t * 23.7 + 1.3);
     if (l.light) l.light.intensity = 1.2 * f;

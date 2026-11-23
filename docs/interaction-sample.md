@@ -44,3 +44,16 @@ Bertram 12.6 cm). Clover's wave was reshaped after review feedback about the for
 - No inventory, journal, saving or quest progression. Those are Stage 4. Reloading the page
   starts again.
 - The dialogue is sample text written to the settled story decisions, not final script.
+
+## Ambient sound (added after review)
+All sound is synthesised with Web Audio (`src/audio/ambience.ts`). There are no audio files.
+- **Wind in the leaves:** a low breeze and a leaf rustle that swell together in random gusts.
+- **Birdsong:** four made-up songs (falling whistles, rising chirps, a warbling trill, a
+  two-note call). Each phrase comes from a random direction, and far birds sound softer and duller.
+- **Campfire:** a soft roar and hiss with random crackles and occasional snaps. It is heard
+  only within about 11 m, louder as you approach, and panned by where it is relative to your
+  view. It is silent at the Village Oak.
+
+Sound starts on the first click or key press. Settings has an on/off switch and a volume
+slider, kept in this browser. A browser test confirmed all three layers run with the fire
+audible only near the campfire. How it actually sounds needs a listen.

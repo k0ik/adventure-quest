@@ -63,6 +63,8 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #2b2520; col
 .settings label { display: flex; gap: 8px; align-items: center; }
 .settings select { font: inherit; color: var(--ink); background: #3a3029; border: 1px solid var(--panel-edge); border-radius: 6px; padding: 4px 6px; }
 .settings input { accent-color: var(--accent); }
+.settings input[type='range'] { flex: 1; }
+.settings input:disabled { opacity: 0.45; }
 .settings a { color: var(--accent); }
 
 .title { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(29, 24, 19, 0.45); }

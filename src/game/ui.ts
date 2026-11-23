@@ -17,6 +17,8 @@ export interface StoryView {
 export interface Settings {
   reducedMotion: boolean;
   skipTravel: 'never' | 'revisits' | 'always';
+  sound: boolean;
+  volume: number; // 0..1
 }
 
 const SETTINGS_KEY = 'forest-adventure.settings.v1';
@@ -25,6 +27,8 @@ export function loadSettings(): Settings {
   const fallback: Settings = {
     reducedMotion: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
     skipTravel: 'never',
+    sound: true,
+    volume: 0.7,
   };
   try {
     const raw = localStorage.getItem(SETTINGS_KEY);
@@ -50,6 +54,7 @@ export class Hud {
   private barFill: HTMLElement | null = null;
   onRecentre: () => void = () => {};
   onSkip: () => void = () => {};
+  onSoundChange: () => void = () => {};
 
   constructor(private root: HTMLElement, readonly settings: Settings, private studiesHref: string) {
     this.story.setAttribute('aria-live', 'polite');
@@ -161,10 +166,29 @@ export class Hud {
     sel.value = this.settings.skipTravel;
     sel.addEventListener('change', () => { this.settings.skipTravel = sel.value as Settings['skipTravel']; saveSettings(this.settings); });
     skipLabel.append(document.createTextNode('Skip journeys: '), sel);
+    const sound = el('label');
+    const sc = document.createElement('input');
+    sc.type = 'checkbox';
+    sc.id = 'set-sound';
+    sc.checked = this.settings.sound;
+    sc.addEventListener('change', () => { this.settings.sound = sc.checked; vol.disabled = !sc.checked; saveSettings(this.settings); this.onSoundChange(); });
+    sound.append(sc, document.createTextNode('Ambient sound'));
+    const volLabel = el('label');
+    const vol = document.createElement('input');
+    vol.type = 'range';
+    vol.id = 'set-volume';
+    vol.min = '0';
+    vol.max = '1';
+    vol.step = '0.05';
+    vol.value = String(this.settings.volume);
+    vol.disabled = !this.settings.sound;
+    vol.setAttribute('aria-label', 'Volume');
+    vol.addEventListener('input', () => { this.settings.volume = Number(vol.value); saveSettings(this.settings); this.onSoundChange(); });
+    volLabel.append(document.createTextNode('Volume '), vol);
     const studies = document.createElement('a');
     studies.href = this.studiesHref;
     studies.textContent = 'Open the visual studies';
-    panel.append(h, motion, skipLabel, studies);
+    panel.append(h, sound, volLabel, motion, skipLabel, studies);
     this.root.append(panel);
     this.settingsPanel = panel;
     gear.setAttribute('aria-expanded', 'true');
@@ -198,7 +222,7 @@ export function showTitle(root: HTMLElement, onBegin: () => void): void {
   const h = el('h1');
   h.textContent = 'Forest Adventure';
   const p = el('p');
-  p.textContent = 'An interaction sample: one clearing, one path, two neighbours.';
+  p.textContent = 'An interaction sample: one clearing, one path, two neighbours. Best with sound on.';
   const b = button('Begin', () => { wrap.remove(); onBegin(); });
   card.append(h, p, b);
   wrap.append(card);
