@@ -24,8 +24,21 @@ export interface AnimalSpec {
     mask?: number;
     muzzle: { length: number; width: number; height: number; drop: number };
     noseSize: number;
+    /**
+     * Optional lofted head: cross-section rings from the back of the skull (negative `at`)
+     * to the nose (positive `at`), all in units of `radius`. Replaces the sphere skull,
+     * cheeks and muzzle with one economical faceted form.
+     */
+    profile?: {
+      rings: { at: number; w: number; h: number; c: number }[];
+      /** How strongly the muzzle and chin are tinted toward the light fur (0..1). Keep subtle. */
+      muzzleTint: number;
+      /** Where the ears sit along the head (in radius units). */
+      earAt: number;
+    };
   };
-  eyes: { spacing: number; height: number; size: number };
+  /** Sphere heads use spacing/height; lofted heads use `at` (along the head) and `angle` (up from the side). */
+  eyes: { spacing: number; height: number; size: number; at?: number; angle?: number };
   ears: {
     kind: 'long' | 'round' | 'pointed';
     length: number;

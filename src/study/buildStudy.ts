@@ -9,6 +9,8 @@ import { buildLanternPost, type LanternPost } from '../builders/lantern';
 import { buildAnimal } from '../builders/animal/build';
 import { buildMushrooms } from '../builders/mushroom';
 import { buildBackdrop } from '../builders/backdrop';
+import { buildWoodland } from '../builders/woodland';
+import { sunDirection } from './environment';
 import { mat } from '../art/materials';
 import type { AnimalRig } from '../builders/animal/types';
 
@@ -50,16 +52,31 @@ export function buildStudy(): Study {
   seat(rabbit.object, S.resident.x, S.resident.z, S.resident.rotY);
 
   // Outer meadow so the study patch sits in a landscape rather than floating in sky.
-  const meadow = new THREE.Mesh(new THREE.CircleGeometry(60, 48), mat('grass'));
+  const meadow = new THREE.Mesh(new THREE.CircleGeometry(60, 48), mat('forestFloor'));
   meadow.rotation.x = -Math.PI / 2;
   meadow.position.y = -0.22;
   meadow.receiveShadow = true;
   meadow.name = 'meadow';
   root.add(meadow);
 
+  const trail = S.ground.path;
+  root.add(buildWoodland({
+    ...S.woodland,
+    heightAt: ground.heightAt,
+    trailDistance: (x, z) => Math.abs(x - trail.curve(z)),
+    sunGap: { dir: [sunDirection.x, sunDirection.z], halfAngle: 0.42 },
+    keepOpen: [
+      { x: S.tree.x, z: S.tree.z, r: 1.4 },
+      { x: S.rock.x, z: S.rock.z, r: 1.0 },
+      { x: S.lantern.x, z: S.lantern.z, r: 0.8 },
+      { x: S.resident.x, z: S.resident.z, r: 1.0 },
+      ...Object.values(S.views).map((v) => ({ x: v.position[0], z: v.position[2], r: 1.2 })),
+    ],
+  }));
+
   root.add(buildBackdrop('study-hills', [
-    { radius: 46, height: 9, colour: 'hillFar', haze: 0.55 },
-    { radius: 30, height: 5, colour: 'hillNear', haze: 0.45 },
+    { radius: 50, height: 14, colour: 'hillFar', haze: 0.45 },
+    { radius: 34, height: 9, colour: 'hillNear', haze: 0.4 },
   ]));
 
   return { root, lantern, rabbit };

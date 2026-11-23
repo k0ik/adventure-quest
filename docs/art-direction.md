@@ -31,3 +31,25 @@ images) and the Richard Scarry / Wildwood touchstones. These are proposals, not 
 - Two references use painterly, non-faceted surfaces (the stream and the cat). I've followed the
   faceted majority.
 - The hills backdrop is a placeholder for depth. Real clearings will be enclosed by forest.
+
+## Revision 1 (after creator feedback)
+Approved: head-to-body ratio and relative height (residents look up at the player a little);
+faceted rather than painterly surfaces.
+
+Changes:
+- **Head:** the sphere is replaced by a lofted low-poly head built from cross-section rings
+  (`head.profile`). It has a broad cranium and cheeks tapering to a blunt snout, a slightly more
+  realistic but economical silhouette taken from the rabbit references. The face patch and
+  muzzle pieces are gone; only a subtle muzzle and chin tint remains. A small triangular nose.
+- **Eyes:** found by casting a ray onto the actual head facet and seated as smooth glossy domes
+  aligned to that facet, so no facet edge cuts through them. Each has one catch-light.
+- **Ears:** faceted leaf shapes (broadest a third of the way up, pointed tip) with an inset pink
+  lining, after the references. One tip still flops to the side.
+- **Apron:** the bib is removed (it read as an unexplained green patch), and there are now two
+  patch pockets toward the sides.
+- **Setting:** a walking trail through dense wild woodland instead of open grassland. There are
+  seeded firs and broadleaf trees, impassable bushes crowding the trail edges, a darker forest
+  floor under the trees, and fallen leaves and mushrooms. Tree placement leaves a gap toward the
+  sun so a shaft of low light falls across the clearing.
+- **Light and mood:** a warmer, lower sun (`#ffb877`), a cool blue rim light from nearly the
+  opposite direction, a reduced cool sky fill, and denser warm haze between the trunks.

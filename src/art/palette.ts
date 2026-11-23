@@ -13,6 +13,7 @@ export const palette = {
   fir: '#3e5b40',
 
   // Ground
+  forestFloor: '#4f5a2b',
   grass: '#5f8a33',
   grassDry: '#97a24a',
   moss: '#6f9a38',
@@ -58,14 +59,17 @@ export const palette = {
   flowerViolet: '#8a6fb0',
 
   // Distance haze layers (atmospheric perspective)
-  hillNear: '#7f9a6a',
-  hillFar: '#a7a79a',
+  hillNear: '#5f7a5a',
+  hillFar: '#9a9ab4',
+
+  // Light
+  rimCool: '#7f9be0',
 
   // Sky
   skyTop: '#8f8fb8',
   skyMid: '#d9b8a6',
   skyHorizon: '#f6c58a',
-  sun: '#ffd49a',
+  sun: '#ffb877',
 } as const;
 
 export type PaletteKey = keyof typeof palette;

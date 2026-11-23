@@ -19,6 +19,8 @@ export interface GroundParams {
   leaves?: number;
   /** Points to keep clear of decoration (objects sit there). */
   clear?: { x: number; z: number; r: number }[];
+  /** Beyond this distance from the centre the ground becomes darker forest floor. */
+  clearingRadius?: number;
 }
 
 export interface GroundPatch {
@@ -84,6 +86,7 @@ export function buildGround(p: GroundParams): GroundPatch {
   const moss = new THREE.Color(palette.moss);
   const path = new THREE.Color(palette.path);
   const soil = new THREE.Color(palette.soil);
+  const floor = new THREE.Color(palette.forestFloor);
   const patch = (x: number, z: number) =>
     Math.sin(x * 0.7 + phases[5]) * Math.cos(z * 0.6 - phases[1]) + 0.5 * Math.sin((x - z) * 1.3 + phases[2]);
   const tmp = new THREE.Color();
@@ -94,9 +97,16 @@ export function buildGround(p: GroundParams): GroundPatch {
     if (edge < 0.75) return tmp.copy(path).lerp(soil, rng() * 0.25).clone();
     if (edge < 1.05) return tmp.copy(path).lerp(grassDry, 0.55).clone();
     const t = patch(c.x, c.z) + (rng() - 0.5) * 0.25;
-    if (t > 0.75) return tmp.copy(grass).lerp(grassDry, 0.6).clone();
-    if (t < -0.7) return moss;
-    return tmp.copy(grass).lerp(moss, (t + 1) * 0.15).clone();
+    let col: THREE.Color;
+    if (t > 0.75) col = tmp.copy(grass).lerp(grassDry, 0.6).clone();
+    else if (t < -0.7) col = moss.clone();
+    else col = tmp.copy(grass).lerp(moss, (t + 1) * 0.15).clone();
+    if (p.clearingRadius) {
+      // Under the trees: shaded mossy floor with leaf litter.
+      const k = Math.min(1, Math.max(0, (Math.hypot(c.x, c.z) - p.clearingRadius) / 3));
+      col.lerp(rng() < 0.2 ? soil : floor, k * 0.75);
+    }
+    return col;
   });
   const surface = mesh(geo, vertexColourMat('matte'), 'ground');
   surface.receiveShadow = true;

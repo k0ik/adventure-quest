@@ -80,18 +80,13 @@ function apron(spec: AnimalSpec, g: Extract<GarmentSpec, { kind: 'apron' }>, j: 
   s.scale.set(b.hipWidth * 1.12, 1, b.depth * (1 + b.belly * 0.15) * 1.12);
   s.position.set(0, waistY - skirtH / 2, b.belly * 0.02);
   j.hips.add(s);
-  // Bib: a gently curved panel over the chest, on the chest joint.
-  const bibH = b.torsoLength * 0.36;
-  const bib = mesh(new THREE.CylinderGeometry(1, 1, bibH, 10, 1, true, -0.62, 1.24), cloth, 'apron-bib');
-  bib.scale.set(b.chestWidth * 1.12, 1, b.depth * 0.92 * 1.14);
-  bib.position.set(0, -b.torsoLength * 0.1, 0);
-  j.chest.add(bib);
   // Waist tie and a bow at the back.
   const trim = mat(g.trim ?? g.colour, 'cloth');
   const tie = mesh(new THREE.TorusGeometry(1, 0.018, 4, 18), trim, 'apron-tie');
   tie.rotation.x = Math.PI / 2;
-  const waistR = ellipseRadiusAt(b.hipWidth, b.torsoLength * 0.42, waistY - b.torsoLength * 0.12) * 1.12;
-  const waistD = ellipseRadiusAt(b.depth * (1 + b.belly * 0.15), b.torsoLength * 0.42, waistY - b.torsoLength * 0.12) * 1.14;
+  // Tie sits outside any jumper (which is scaled by CLOTH_GAP), so measure from that surface.
+  const waistR = ellipseRadiusAt(b.hipWidth * CLOTH_GAP, b.torsoLength * 0.42 * CLOTH_GAP, waistY - b.torsoLength * 0.12) * 1.06;
+  const waistD = ellipseRadiusAt(b.depth * (1 + b.belly * 0.15) * CLOTH_GAP, b.torsoLength * 0.42 * CLOTH_GAP, waistY - b.torsoLength * 0.12) * 1.08;
   tie.scale.set(waistR, waistD, 1);
   tie.position.set(0, waistY, b.belly * 0.02);
   j.hips.add(tie);
@@ -103,10 +98,15 @@ function apron(spec: AnimalSpec, g: Extract<GarmentSpec, { kind: 'apron' }>, j: 
     j.hips.add(loop);
   }
   if (g.pocket) {
-    const pocket = mesh(box(0.1, 0.07, 0.012), trim, 'apron-pocket');
-    pocket.position.set(0.02, waistY - skirtH * 0.45, b.depth * (1 + b.belly * 0.15) * 1.12 * 1.06 + b.belly * 0.02);
-    pocket.rotation.x = -0.12;
-    j.hips.add(pocket);
+    // Two patch pockets toward the sides, following the skirt's curve.
+    const rx = b.hipWidth * 1.12 * 1.06, rz = b.depth * (1 + b.belly * 0.15) * 1.12 * 1.06;
+    for (const side of [1, -1]) {
+      const theta = side * 0.62;
+      const pocket = mesh(box(0.075, 0.065, 0.012), trim, 'apron-pocket');
+      pocket.position.set(Math.sin(theta) * rx, waistY - skirtH * 0.42, Math.cos(theta) * rz + b.belly * 0.02);
+      pocket.rotation.set(-0.1, theta, 0);
+      j.hips.add(pocket);
+    }
   }
 }
 

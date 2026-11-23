@@ -9,18 +9,26 @@ export const sunDirection = new THREE.Vector3(-0.78, 0.3, 0.55).normalize();
 
 export function buildEnvironment(scene: THREE.Scene): { sun: THREE.DirectionalLight } {
   scene.background = new THREE.Color(palette.skyHorizon);
-  scene.fog = new THREE.Fog(new THREE.Color('#e3b996'), 14, 48);
+  // Warm haze that thickens between the trunks, for depth.
+  scene.fog = new THREE.Fog(new THREE.Color('#d9a483'), 9, 38);
 
-  const hemi = new THREE.HemisphereLight('#cdd2f0', '#7d7444', 1.7);
+  // Fill is deliberately modest and cool so the warm sun and shade separate clearly.
+  const hemi = new THREE.HemisphereLight('#9fa8d6', '#5a4a2c', 1.25);
   scene.add(hemi);
 
-  const sun = new THREE.DirectionalLight(palette.sun, 2.9);
-  sun.position.copy(sunDirection).multiplyScalar(20);
+  // Cool edge light from nearly opposite the sun: blue rims on silhouettes, no shadows.
+  const rim = new THREE.DirectionalLight(palette.rimCool, 1.3);
+  rim.position.copy(sunDirection).multiplyScalar(-20).setY(9);
+  rim.castShadow = false;
+  scene.add(rim);
+
+  const sun = new THREE.DirectionalLight(palette.sun, 3.4);
+  sun.position.copy(sunDirection).multiplyScalar(30);
   sun.target.position.set(0, 0, 0);
   sun.castShadow = true;
-  sun.shadow.mapSize.set(2048, 2048);
+  sun.shadow.mapSize.set(4096, 4096);
   const c = sun.shadow.camera;
-  c.left = -9; c.right = 9; c.top = 9; c.bottom = -9; c.near = 1; c.far = 50;
+  c.left = -14; c.right = 14; c.top = 14; c.bottom = -14; c.near = 1; c.far = 60;
   sun.shadow.bias = -0.0004;
   sun.shadow.normalBias = 0.02;
   sun.shadow.radius = 3;

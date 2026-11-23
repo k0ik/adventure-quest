@@ -1,6 +1,7 @@
 import * as THREE from 'three';
-import { mat, mesh, enableShadows } from '../../art/materials';
-import { ball, capsule, lowSphere, cylinder } from '../../art/geometry';
+import { mat, mesh, enableShadows, vertexColourMat, smoothGloss } from '../../art/materials';
+import { ball, capsule, lowSphere, cylinder, paintFaces } from '../../art/geometry';
+import { headSection, earSection, loftY, loftZ, ringAt, sliceRings, type Ring } from './loft';
 import type { AccessorySpec, AnimalRig, AnimalSpec, JointName, OutfitSpec, Pose } from './types';
 import { dressTorso, dressArm } from './outfit';
 import { buildAccessory } from './accessories';
@@ -41,8 +42,9 @@ export function buildAnimal(spec: AnimalSpec, outfit: OutfitSpec, accessories: A
   hips.add(belly);
   if (spec.bellyPatch) {
     const patch = mesh(lowSphere(10, 8), furLight, 'belly-patch');
-    patch.scale.set(b.hipWidth * 0.62 * spec.bellyPatch, b.torsoLength * 0.34, b.depth * 0.6);
-    patch.position.set(0, b.torsoLength * 0.12, b.depth * (1 + b.belly * 0.15) * 0.48 + b.belly * 0.02);
+    // Kept just inside any garment surface so clothing always covers it cleanly.
+    patch.scale.set(b.hipWidth * 0.62 * spec.bellyPatch, b.torsoLength * 0.34, b.depth * 0.55);
+    patch.position.set(0, b.torsoLength * 0.12, b.depth * (1 + b.belly * 0.15) * 0.4 + b.belly * 0.02);
     hips.add(patch);
   }
   const chestMass = mesh(lowSphere(10, 8), fur, 'chest');
@@ -135,6 +137,11 @@ function buildHead(
 ): void {
   const h = spec.head;
   const R = h.radius;
+  if (h.profile) {
+    buildLoftHead(spec, head, fur, furLight);
+    buildEars(spec, head, j, fur, furInner);
+    return;
+  }
   const skull = mesh(lowSphere(10, 8), fur, 'skull');
   skull.scale.set(R * h.scale[0], R * h.scale[1], R * h.scale[2]);
   head.add(skull);
@@ -185,34 +192,51 @@ function buildHead(
     head.add(glint);
   }
 
-  // Ears.
+  buildEars(spec, head, j, fur, furInner);
+}
+
+function buildEars(
+  spec: AnimalSpec,
+  head: THREE.Object3D,
+  j: Record<JointName, THREE.Object3D>,
+  fur: THREE.Material,
+  furInner: THREE.Material,
+): void {
+  const h = spec.head;
+  const R = h.radius;
   const ears = spec.ears;
   for (const side of ['L', 'R'] as const) {
     const sx = side === 'L' ? 1 : -1;
-    const base = new THREE.Vector3(sx * R * h.scale[0] * 0.42, R * h.scale[1] * 0.82, -R * 0.12);
+    let base: THREE.Vector3;
+    if (h.profile) {
+      const r = ringAt(h.profile.rings, h.profile.earAt);
+      base = new THREE.Vector3(sx * r.w * R * 0.42, (r.c + r.h * 0.8) * R, h.profile.earAt * R);
+    } else {
+      base = new THREE.Vector3(sx * R * h.scale[0] * 0.42, R * h.scale[1] * 0.82, -R * 0.12);
+    }
     const ear = new THREE.Group();
     ear.name = `joint:ear${side}`;
     ear.position.copy(base);
-    ear.rotation.set(-ears.tilt, 0, -sx * ears.splay);
+    ear.rotation.set(-ears.tilt, sx * 0.25, -sx * ears.splay);
     head.add(ear);
     j[`ear${side}`] = ear;
 
     if (ears.kind === 'long') {
       const droop = ears.droop?.side === (side === 'L' ? 'left' : 'right') ? ears.droop : undefined;
-      const baseLen = ears.length * (droop ? droop.at : 1);
-      const tipLen = ears.length - baseLen;
-      const lower = earBlade(ears.width, baseLen, fur, furInner, droop ? 'base' : 'full');
-      ear.add(lower);
+      const split = droop ? droop.at : 1;
+      ear.add(leafEar(ears.width, ears.length, 0, split, fur, furInner));
       const tipJoint = new THREE.Group();
       tipJoint.name = `joint:earTip${side}`;
-      tipJoint.position.y = baseLen;
+      tipJoint.position.y = ears.length * split;
       ear.add(tipJoint);
       j[`earTip${side}`] = tipJoint;
       if (droop) {
         // Flop outward to the side so the fold reads clearly in silhouette.
         tipJoint.rotation.x = droop.angle * 0.25;
         tipJoint.rotation.z = -sx * droop.angle;
-        tipJoint.add(earBlade(ears.width * 0.95, tipLen, fur, furInner, 'tip'));
+        const tip = leafEar(ears.width, ears.length, split, 1, fur, furInner);
+        tip.position.y = -ears.length * split;
+        tipJoint.add(tip);
       }
     } else {
       const shape = mesh(ears.kind === 'round' ? lowSphere(8, 6) : capsule(1, 1, 2, 5), fur, 'ear');
@@ -228,19 +252,94 @@ function buildHead(
   }
 }
 
-/** A long ear blade: flattened capsule with an inner lining on the front face. */
-function earBlade(width: number, length: number, fur: THREE.Material, inner: THREE.Material, part: 'full' | 'base' | 'tip'): THREE.Group {
+/** Leaf-shaped faceted ear (broadest a third of the way up, pointed tip) with an inset lining. */
+const earProfile: Ring[] = [
+  { at: 0, w: 0.5, h: 0.42, c: 0 },
+  { at: 0.18, w: 0.88, h: 0.4, c: 0 },
+  { at: 0.42, w: 1, h: 0.36, c: 0.04 },
+  { at: 0.72, w: 0.72, h: 0.3, c: 0.04 },
+  { at: 0.93, w: 0.25, h: 0.18, c: 0.02 },
+  { at: 1, w: 0.04, h: 0.04, c: 0 },
+];
+const liningProfile: Ring[] = [
+  { at: 0.1, w: 0.3, h: 0.05, c: 0 },
+  { at: 0.4, w: 0.66, h: 0.05, c: 0 },
+  { at: 0.72, w: 0.46, h: 0.05, c: 0 },
+  { at: 0.9, w: 0.1, h: 0.05, c: 0 },
+];
+
+function leafEar(width: number, length: number, from: number, to: number, fur: THREE.Material, inner: THREE.Material): THREE.Group {
   const g = new THREE.Group();
-  const r = width;
-  const bodyLen = Math.max(0.001, length - (part === 'base' ? r * 0.2 : r));
-  const outer = mesh(capsule(1, 1, 3, 8), fur, 'ear');
-  // Unit capsule is radius 1, length 1 (total 3). Scale to the blade's size.
-  outer.scale.set(r, (bodyLen + r * 2) / 3, r * 0.42);
-  outer.position.y = length / 2;
+  const scaleRings = (rs: Ring[], depth: number, shift: number) =>
+    rs.map((r) => ({ at: r.at * length, w: r.w * width, h: r.h * width * depth, c: r.c * width + shift }));
+  const outer = mesh(loftY(scaleRings(sliceRings(earProfile, from, to), 1, 0), earSection, from === 0, to === 1), fur, 'ear');
   g.add(outer);
-  const lining = mesh(capsule(1, 1, 3, 8), inner, 'ear-inner');
-  lining.scale.set(r * 0.58, ((bodyLen + r * 2) / 3) * 0.86, r * 0.2);
-  lining.position.set(0, length / 2, r * 0.28);
-  g.add(lining);
+  const lf = Math.max(from, liningProfile[0].at), lt = Math.min(to, liningProfile[liningProfile.length - 1].at);
+  if (lt > lf) {
+    // The lining sits just proud of the ear's flat front face.
+    const front = 0.36 * width; // approx front-face depth at the widest point
+    const lining = mesh(loftY(scaleRings(sliceRings(liningProfile, lf, lt), 1, front * 0.98), earSection), inner, 'ear-inner');
+    g.add(lining);
+  }
   return g;
+}
+
+function buildLoftHead(spec: AnimalSpec, head: THREE.Object3D, fur: THREE.Material, furLight: THREE.Material): void {
+  const h = spec.head;
+  const R = h.radius;
+  const P = h.profile!;
+  const rings: Ring[] = P.rings.map((r) => ({ at: r.at * R, w: r.w * R, h: r.h * R, c: r.c * R }));
+  const geo = loftZ(rings, headSection);
+  // Two-tone by facet: subtle lighter muzzle and chin, the rest main fur.
+  const main = new THREE.Color().copy((fur as THREE.MeshStandardMaterial).color);
+  const light = new THREE.Color().copy((furLight as THREE.MeshStandardMaterial).color);
+  const muzzle = main.clone().lerp(light, P.muzzleTint);
+  const chin = main.clone().lerp(light, P.muzzleTint * 0.8);
+  const front = rings[rings.length - 1].at;
+  paintFaces(geo, (c, n) => {
+    const r = ringAt(rings, c.z);
+    if (c.z > front * 0.55 && c.y < r.c) return muzzle;
+    if (n.y < -0.55) return chin;
+    return main;
+  });
+  head.add(mesh(geo, vertexColourMat('matte'), 'skull'));
+
+  // Nose: a small inverted triangle on the top front of the snout.
+  const tip = rings[rings.length - 1];
+  const nose = mesh(new THREE.CircleGeometry(1, 3), mat(spec.fur.nose, 'gloss', true), 'nose');
+  nose.scale.set(h.noseSize * 1.3, h.noseSize, 1);
+  nose.rotation.set(-0.45, 0, -Math.PI / 2);
+  nose.position.set(0, tip.c + tip.h * 0.5, tip.at + Math.min(tip.w, tip.h) * 0.3);
+  head.add(nose);
+
+  // Eyes: glossy domes seated on the head's actual surface. A ray from inside the head finds
+  // the facet each eye sits on; the eye is aligned to that facet's normal so no facet edge
+  // cuts through it.
+  const e = spec.eyes;
+  const er = ringAt(rings, (e.at ?? 0.3) * R);
+  const ang = e.angle ?? 0.3;
+  const probe = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }));
+  const ray = new THREE.Raycaster();
+  for (const sx of [1, -1]) {
+    const from = new THREE.Vector3(0, er.c, er.at);
+    const dir = new THREE.Vector3(sx * Math.cos(ang), Math.sin(ang), 0.45).normalize();
+    ray.set(from, dir);
+    const hit = ray.intersectObject(probe, false)[0];
+    if (!hit || !hit.face) continue;
+    const normal = hit.face.normal.clone().normalize();
+    const eye = mesh(lowSphere(14, 10), smoothGloss('eye'), 'eye');
+    eye.scale.set(e.size, e.size * 1.15, e.size * 0.42);
+    // Centre just outside the facet: a shallow dome that never intersects the face.
+    eye.position.copy(hit.point).addScaledVector(normal, e.size * 0.12);
+    eye.lookAt(eye.position.clone().add(normal));
+    head.add(eye);
+    // Catch-light on the dome, up and slightly toward the face's front.
+    const glint = mesh(lowSphere(8, 6), smoothGloss('clothCream'), 'eye-glint');
+    glint.scale.setScalar(e.size * 0.2);
+    const up = new THREE.Vector3(0, 1, 0).projectOnPlane(normal).normalize();
+    const fwd = new THREE.Vector3(0, 0, 1).projectOnPlane(normal).normalize();
+    glint.position.copy(eye.position).addScaledVector(normal, e.size * 0.38).addScaledVector(up, e.size * 0.42).addScaledVector(fwd, e.size * 0.2);
+    head.add(glint);
+  }
+  probe.material.dispose();
 }

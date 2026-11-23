@@ -35,7 +35,7 @@ function setView(name: ViewName): void {
   const v = name === 'free' ? studyScene.views.overall : studyScene.views[name];
   camera.position.fromArray(v.position);
   controls.target.fromArray(v.target);
-  camera.fov = name === 'character' ? 40 : 55;
+  camera.fov = name === 'overall' || name === 'free' ? 55 : 40;
   camera.updateProjectionMatrix();
   controls.enabled = name === 'free';
   controls.update();

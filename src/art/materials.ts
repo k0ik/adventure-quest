@@ -73,3 +73,10 @@ export function mesh(geometry: THREE.BufferGeometry, material: THREE.Material, n
   if (name) m.name = name;
   return m;
 }
+
+/** Smooth-shaded gloss for eyes: facets on a tiny glossy dome read as glare, not form. */
+export function smoothGloss(color: PaletteKey): THREE.MeshStandardMaterial {
+  return cached(`smooth:${color}`, () =>
+    new THREE.MeshStandardMaterial({ color: palette[color], roughness: 0.22, metalness: 0, flatShading: false }),
+  );
+}
