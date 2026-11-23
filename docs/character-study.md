@@ -40,3 +40,14 @@ Motion is reduced by half when the browser requests reduced motion.
 2. Do the clothes and props suggest his trade (an outdoors trail keeper)?
 3. Do the breathing, head turns and gestures feel alive without being busy? Is the speed right for each?
 4. Any clipping you notice where joints or clothing meet during motion?
+
+## Revision 1 (after creator feedback)
+Approved: Badger's design, both outfits, Badger's motion speed, breathing and ear/tail motion.
+
+- **Arm clearance:** relaxed arms now splay outward just enough to clear the widest part of the
+  body and clothing below the shoulder (`restingArmAngle`). Badger's arm no longer sinks into his
+  waistcoat. This applies automatically to every resident.
+- **Clover is twitchier:** ear flicks are about 2.5 times as frequent, glances are quicker and dart
+  more often (`look.pace`), and her breathing is slightly faster.
+- **Controls:** breathing and ear/tail motion always run. Looking is a single choice between
+  "Look around" and "Look at me".

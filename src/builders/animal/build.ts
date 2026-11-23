@@ -4,7 +4,7 @@ import { palette } from '../../art/palette';
 import { ball, capsule, lowSphere, cylinder, paintFaces } from '../../art/geometry';
 import { headSection, earSection, loftY, loftZ, ringAt, sliceRings, type Ring } from './loft';
 import type { AccessorySpec, AnimalRig, AnimalSpec, JointName, OutfitSpec, Pose } from './types';
-import { dressTorso, dressArm } from './outfit';
+import { dressTorso, dressArm, torsoRadiiAt, outerLayerAt } from './outfit';
 import { buildAccessory } from './accessories';
 
 /**
@@ -76,7 +76,7 @@ export function buildAnimal(spec: AnimalSpec, outfit: OutfitSpec, accessories: A
     const paw = mesh(ball(1), pawFur, 'paw');
     paw.scale.set(a.paw, a.paw * 1.1, a.paw * 0.9);
     hand.add(paw);
-    shoulder.rotation.z = sx * 0.12;
+    shoulder.rotation.z = sx * restingArmAngle(spec, outfit);
   }
 
   // Legs: a haunch on the hip, short shin, big foot.
@@ -353,4 +353,26 @@ function buildLoftHead(spec: AnimalSpec, head: THREE.Object3D, fur: THREE.Materi
     }
   }
   probe.material.dispose();
+}
+
+/**
+ * Outward angle for a relaxed hanging arm: the smallest splay (at least a natural 0.12 rad)
+ * that keeps the whole arm clear of the torso and whatever is worn over it. Stocky residents
+ * whose bellies are wider than their shoulders get correspondingly more splayed arms.
+ */
+function restingArmAngle(spec: AnimalSpec, outfit: OutfitSpec): number {
+  const b = spec.body;
+  const a = spec.arms;
+  const T = b.torsoLength;
+  const shoulderY = T * 0.77;
+  const shoulderX = b.chestWidth * 0.92;
+  const length = a.upper + a.lower + a.paw;
+  let sin = Math.sin(0.12);
+  for (let i = 1; i <= 12; i++) {
+    const d = (i / 12) * length;
+    const y = shoulderY - d;
+    const need = torsoRadiiAt(spec, y).rx * outerLayerAt(spec, outfit, y) + a.thickness * 1.15;
+    sin = Math.max(sin, (need - shoulderX) / d);
+  }
+  return Math.min(0.6, Math.asin(Math.min(1, sin)));
 }

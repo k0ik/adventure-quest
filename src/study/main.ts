@@ -108,18 +108,6 @@ function row(title: string, ...children: HTMLElement[]): HTMLElement {
   return wrap;
 }
 
-function checkbox(id: string, label: string, key: keyof Omit<MotionToggles, 'intensity'>): HTMLElement {
-  const l = document.createElement('label');
-  l.className = 'check';
-  const c = document.createElement('input');
-  c.type = 'checkbox';
-  c.id = id;
-  c.checked = toggles[key];
-  c.addEventListener('change', () => { toggles[key] = c.checked; });
-  l.append(c, document.createTextNode(label));
-  return l;
-}
-
 function renderPanel(): void {
   panel.replaceChildren();
   const title = document.createElement('p');
@@ -132,12 +120,14 @@ function renderPanel(): void {
   ));
   panel.append(row('View', ...Object.entries(views()).map(([k, v]) => button(v.label, () => setView(k), { 'data-view': k }))));
   if (mode === 'characters') {
-    panel.append(row('Motion',
-      checkbox('m-breathe', 'Breathing', 'breathing'),
-      checkbox('m-look', 'Look around', 'look'),
-      checkbox('m-viewer', 'Look at me', 'lookAtViewer'),
-      checkbox('m-ears', 'Ears & tail', 'earsTail'),
-    ));
+    // Breathing and ear/tail motion always run; looking is one choice of two.
+    panel.append(row('Look', ...(['around', 'viewer'] as const).map((which) =>
+      button(which === 'around' ? 'Look around' : 'Look at me', () => {
+        toggles.look = which === 'around';
+        toggles.lookAtViewer = which === 'viewer';
+        panel.querySelectorAll<HTMLButtonElement>('[data-look]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.look === which)));
+      }, { 'data-look': which, 'aria-pressed': String(which === 'viewer' ? toggles.lookAtViewer : !toggles.lookAtViewer) }),
+    )));
     panel.append(row('Gesture', ...animators.map(({ id, animator }) => {
       const r = residents[id];
       const kind = r.id === 'rabbit' ? 'wave' : 'point';
@@ -164,7 +154,7 @@ if (params.get('ui') === '0') panel.remove();
 resize();
 // Gestures requested by URL start once the first frames are on screen.
 const pendingGestures = (params.get('gesture') ?? '').split(',').filter(Boolean);
-if (params.get('look') === 'viewer') toggles.lookAtViewer = true;
+if (params.get('look') === 'viewer') { toggles.lookAtViewer = true; toggles.look = false; }
 if (params.get('still') === '1') { toggles.breathing = false; toggles.look = false; toggles.earsTail = false; }
 
 let frames = 0;

@@ -234,3 +234,17 @@ function cap(spec: AnimalSpec, g: Extract<GarmentSpec, { kind: 'cap' }>, j: Join
   capG.rotation.set(0.12, 0, g.tilt ?? 0);
   j.head.add(capG);
 }
+
+/**
+ * How far the outermost garment stands off the body at height `y` (hips space), as a scale on
+ * the torso radii. Used to keep hanging arms clear of clothing.
+ */
+export function outerLayerAt(spec: AnimalSpec, outfit: OutfitSpec, y: number): number {
+  let layer = 1;
+  for (const g of outfit.garments) {
+    if (g.kind === 'jumper') layer = Math.max(layer, CLOTH_GAP);
+    if (g.kind === 'waistcoat') layer = Math.max(layer, CLOTH_GAP * 1.07);
+    if (g.kind === 'apron' && y < spec.body.torsoLength * 0.22) layer = Math.max(layer, 1.22);
+  }
+  return layer;
+}

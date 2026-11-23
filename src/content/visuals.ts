@@ -56,19 +56,19 @@ export const visuals: Record<string, ResidentVisual> = {
     },
     accessories: [{ kind: 'teacup', hand: 'right', colour: 'clothCream', band: 'clothTeal' }],
     restPose: {
-      shoulderR: [-0.3, 0, 0.1],
+      shoulderR: [-0.3, 0, 0.3],
       elbowR: [-1.25, 0.15, 0],
       handR: [1.55, 0, 0],
       shoulderL: [0.05, 0, 0.05],
       elbowL: [-0.25, 0, 0],
       head: [0.06, 0.18, 0.07],
     },
-    // Quick, light and attentive.
+    // Quick, light and twitchy: darting glances and frequent ear flicks.
     motion: {
-      breath: { perMinute: 24, amount: 1 },
-      look: { maxYaw: 0.85, maxPitch: 0.45, speed: 3.2, idle: 0.35 },
+      breath: { perMinute: 26, amount: 1 },
+      look: { maxYaw: 0.85, maxPitch: 0.45, speed: 6, idle: 0.4, pace: 2.2 },
       gesture: { kind: 'wave', arm: 'L', duration: 2.6 },
-      ears: { twitchesPerMinute: 9, amount: 0.28 },
+      ears: { twitchesPerMinute: 22, amount: 0.34 },
       tail: { wagsPerSecond: 2.2, amount: 0.25 },
     },
   },

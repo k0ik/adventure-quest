@@ -7,7 +7,8 @@ import type { AnimalRig, JointName } from '../builders/animal/types';
  */
 export interface MotionConfig {
   breath: { perMinute: number; amount: number };
-  look: { maxYaw: number; maxPitch: number; speed: number; idle: number };
+  /** `pace` speeds up idle glances (1 = calm). */
+  look: { maxYaw: number; maxPitch: number; speed: number; idle: number; pace?: number };
   gesture: { kind: 'wave' | 'point'; arm: 'L' | 'R'; duration: number };
   ears?: { twitchesPerMinute: number; amount: number };
   tail?: { wagsPerSecond: number; amount: number };
@@ -98,8 +99,9 @@ export class Animator {
         wantPitch = -Math.atan2(this.tmp2.y, Math.hypot(this.tmp2.x, this.tmp2.z));
       } else {
         // Two slow incommensurate waves give unpredictable but gentle glances.
-        wantYaw = c.look.idle * (Math.sin(now * 0.31 + ph) * 0.7 + Math.sin(now * 0.73 + ph * 2) * 0.3) * 1.6;
-        wantPitch = c.look.idle * 0.3 * Math.sin(now * 0.47 + ph);
+        const p = c.look.pace ?? 1;
+        wantYaw = c.look.idle * (Math.sin(now * 0.31 * p + ph) * 0.7 + Math.sin(now * 0.73 * p + ph * 2) * 0.3) * 1.6;
+        wantPitch = c.look.idle * 0.3 * Math.sin(now * 0.47 * p + ph);
       }
       wantYaw = THREE.MathUtils.clamp(wantYaw, -c.look.maxYaw, c.look.maxYaw);
       wantPitch = THREE.MathUtils.clamp(wantPitch, -c.look.maxPitch, c.look.maxPitch);
