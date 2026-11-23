@@ -19,7 +19,7 @@ export const studyScene = {
     clearing: { x: 0, z: -0.4, r: 3.6 },
     extent: 17,
     trees: { count: 46, minGap: 2.2, firShare: 0.4, trailMargin: 1.7 },
-    bushes: { count: 110, minGap: 1.0, trailMargin: 0.85 },
+    bushes: { count: 150, minGap: 1.0, trailMargin: 0.85 },
   },
   rock: { id: 'study-rock', x: 2.6, z: 0.1, size: 1.15, squash: 0.62, mossy: 0.55 },
   lantern: { id: 'study-lantern', x: 1.35, z: -1.6, rotY: -0.5, height: 1.95 },

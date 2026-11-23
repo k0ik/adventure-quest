@@ -186,10 +186,6 @@ function buildHead(
     eye.position.set(ex, e.height, ez * 0.97);
     eye.lookAt(new THREE.Vector3(ex * 2.2, e.height * 1.2, ez * 3));
     head.add(eye);
-    const glint = mesh(ball(0), mat('clothCream', 'gloss'), 'eye-glint');
-    glint.scale.setScalar(e.size * 0.28);
-    glint.position.set(ex + sx * e.size * 0.15, e.height + e.size * 0.4, ez * 0.97 + e.size * 0.45);
-    head.add(glint);
   }
 
   buildEars(spec, head, j, fur, furInner);
@@ -312,7 +308,8 @@ function buildLoftHead(spec: AnimalSpec, head: THREE.Object3D, fur: THREE.Materi
   nose.position.set(0, tip.c + tip.h * 0.5, tip.at + Math.min(tip.w, tip.h) * 0.3);
   head.add(nose);
 
-  // Eyes: glossy domes seated on the head's actual surface. A ray from inside the head finds
+  // Eyes: glossy domes seated on the head's actual surface (no modelled highlight; the gloss
+  // material catches real light). A ray from inside the head finds
   // the facet each eye sits on; the eye is aligned to that facet's normal so no facet edge
   // cuts through it.
   const e = spec.eyes;
@@ -333,13 +330,6 @@ function buildLoftHead(spec: AnimalSpec, head: THREE.Object3D, fur: THREE.Materi
     eye.position.copy(hit.point).addScaledVector(normal, e.size * 0.12);
     eye.lookAt(eye.position.clone().add(normal));
     head.add(eye);
-    // Catch-light on the dome, up and slightly toward the face's front.
-    const glint = mesh(lowSphere(8, 6), smoothGloss('clothCream'), 'eye-glint');
-    glint.scale.setScalar(e.size * 0.2);
-    const up = new THREE.Vector3(0, 1, 0).projectOnPlane(normal).normalize();
-    const fwd = new THREE.Vector3(0, 0, 1).projectOnPlane(normal).normalize();
-    glint.position.copy(eye.position).addScaledVector(normal, e.size * 0.38).addScaledVector(up, e.size * 0.42).addScaledVector(fwd, e.size * 0.2);
-    head.add(glint);
   }
   probe.material.dispose();
 }

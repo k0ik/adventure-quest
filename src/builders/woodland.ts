@@ -73,11 +73,14 @@ export function buildWoodland(p: WoodlandParams): THREE.Group {
   let bushes = 0;
   for (let tries = 0; bushes < p.bushes.count && tries < p.bushes.count * 40; tries++) {
     const { x, z } = sample(p.clearing.r * 0.85);
-    const size = range(rng, 0.9, 1.8);
+    // Further back, many bushes grow tall: a wall of undergrowth that hides the horizon.
+    const far = Math.hypot(x - p.clearing.x, z - p.clearing.z) > p.clearing.r + 2.5;
+    const tall = far && rng() < 0.6;
+    const size = tall ? range(rng, 1.6, 2.4) : range(rng, 0.9, 1.8);
     const r = size * 0.4;
     if (!open(x, z, r, p.bushes.trailMargin, p.bushes.minGap)) continue;
     const id = `${p.id}-bush-${bushes}`;
-    seat(buildBush({ id, size, height: range(rng, 0.5, 0.75), berries: rng() < 0.15 }), x, z);
+    seat(buildBush({ id, size, height: tall ? range(rng, 1.1, 1.5) : range(rng, 0.5, 0.75), berries: rng() < 0.15 }), x, z);
     if (rng() < 0.12) seat(buildMushrooms({ id: `${id}-m`, kind: rng() < 0.5 ? 'toadstool' : 'pale', count: 3, spread: 0.15 }), x + size * 0.5, z + size * 0.3);
     placed.push({ x, z, r });
     bushes++;
